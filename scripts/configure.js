@@ -31,7 +31,7 @@ var ClosureCompiler = require(__dirname+"/../ClosureCompiler.js"),
 console.log("Configuring ClosureCompiler.js "+pkg.version+" ...\n");
 
 // Closure Compiler download url
-var ccUrl = "http://repos.peapod.com/artifactory/api/npm/podnpm/google-closure-compiler/-/google-closure-compiler-20190528.0.0.tgz";
+var ccUrl = "https://repos.peapod.com/artifactory/npmregistry-cache/google-closure-compiler/-/google-closure-compiler-20190528.0.0.tgz";
 
 // Temporary file for the download
 var ccTempFile = path.normalize(path.join(__dirname, "..", "compiler", "compiler.tar.gz"));
