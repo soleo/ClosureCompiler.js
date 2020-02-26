@@ -57,36 +57,20 @@ var jreTempFile = path.normalize(path.join(__dirname, "..", "jre", "jre.tar.gz")
 
 if (!fs.existsSync) fs.existsSync = path.existsSync; // node < 0.8
 
-console.log("  Downloading "+ccUrl+" ...");
-var lastBytes = 0, currentBytes = 0, mb = 1024*1024;
-download(ccUrl, ccTempFile, function(error, bytes) {
+console.log("  Unpacking "+ccTempFile+" ...");
+unpack(ccTempFile, function(error) {
     if (error) {
-        console.log("  ✖ Download failed: "+error+"\n");
+        console.log("  ✖ Unpack failed: "+error+"\n");
         fail();
     }
-    console.log("  ✔ Download complete: "+ccTempFile+" ("+parseInt(bytes/mb, 10)+" mb)\n");
-    setTimeout(function() {
-        console.log("  Unpacking "+ccTempFile+" ...");
-        unpack(ccTempFile, function(error) {
-            if (error) {
-                console.log("  ✖ Unpack failed: "+error+"\n");
-                fail();
-            }
-            setTimeout(function() { // Let the entry callbacks finish
-                console.log("  ✔ Unpack complete.\n");
-                configure_jre();
-            }, 1000);
-        }, function(entry) {
-            console.log("  | "+entry["path"]);
-        });
+    setTimeout(function() { // Let the entry callbacks finish
+        console.log("  ✔ Unpack complete.\n");
+        configure_jre();
     }, 1000);
-}, function(bytes, total) {
-    currentBytes += bytes;
-    if (currentBytes == bytes || currentBytes - lastBytes >= mb) {
-        console.log("  | "+parseInt(currentBytes/mb, 10)+" / "+(total > 0 ? parseInt(total/mb, 10) : "???")+" mb");
-        lastBytes = currentBytes;
-    }
+}, function(entry) {
+    console.log("  | "+entry["path"]);
 });
+
 
 /**
  * Configures the JRE.
@@ -340,3 +324,25 @@ function finish() {
     cleanUp();
     console.log("  ✔ ClosureCompiler.js has successfully been configured!\n");
 }
+
+function download_file_curl(file_url) {
+  // extract the file name
+  var file_name = url.parse(file_url).pathname.split('/').pop();
+  // create an instance of writable stream
+  var file = fs.createWriteStream(ccTempFile);
+  // execute curl using child_process' spawn function
+  var curl = spawn('curl', [file_url]);
+  // add a 'data' event listener for the spawn instance
+  curl.stdout.on('data', function(data) { file.write(data); });
+  // add an 'end' event listener to close the writeable stream
+  curl.stdout.on('end', function(data) {
+    file.end();
+    console.log(file_name + ' downloaded to ' + ccTempFile);
+  });
+  // when the spawn child process exits, check if there were any errors and close the writeable stream
+  curl.on('exit', function(code) {
+    if (code != 0) {
+      console.log('Failed: ' + code);
+    }
+  });
+};
